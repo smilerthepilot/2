@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// PostgreSQL connection pool (update with your Render DB credentials)
+// PostgreSQL connection pool
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || 'postgres://user:password@localhost:5432/etpsplanner',
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
