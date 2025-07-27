@@ -100,7 +100,7 @@ function renderGrid() {
   grid.innerHTML = '';
   // Set grid columns
   let cols = '80px';
-  for (let i = 0; i < times.length; i++) cols += ' 25px';
+  for (let i = 0; i < times.length; i++) cols += ' 1fr';
   grid.style.display = 'grid';
   grid.style.gridTemplateColumns = cols;
   // Header row
@@ -111,7 +111,8 @@ function renderGrid() {
   for (let t = 0; t < times.length; t++) {
     const th = document.createElement('div');
     th.className = 'header';
-    th.textContent = times[t];
+    // Only show label for :00 times
+    th.textContent = times[t].endsWith(':00') ? times[t] : '';
     grid.appendChild(th);
   }
   // Rows
