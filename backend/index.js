@@ -26,6 +26,10 @@ async function runSchema() {
   await pool.query(schema);
 }
 
+app.head('/', (req, res) => {
+  res.status(200).end();
+});
+
 app.get('/', (req, res) => {
   res.json({ message: 'ETPS Planner API running!' });
 });
