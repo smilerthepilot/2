@@ -1,0 +1,74 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ETPS Planner UI</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      text-align: center;
+      padding: 10px;
+      min-width: 120px;
+      min-height: 40px;
+    }
+    .tile {
+      background-color: lightblue;
+      border: 1px solid #000;
+      padding: 4px;
+      position: relative;
+    }
+    .captain {
+      color: red;
+      font-weight: bold;
+    }
+    .fuel, .exercise {
+      position: absolute;
+      right: 5px;
+      font-size: 0.8em;
+    }
+    .fuel { top: 2px; }
+    .exercise { bottom: 2px; }
+  </style>
+</head>
+<body>
+  <h1>ETPS Planner UI</h1>
+  <table>
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>XX123</th>
+        <th>XX456</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>09:00</td>
+        <td>
+          <div class="tile">
+            <div><span class="captain">PE</span><br>HOL</div>
+            <div class="fuel">300</div>
+            <div class="exercise">CT</div>
+          </div>
+        </td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>09:15</td><td></td><td></td>
+      </tr>
+      <tr>
+        <td>09:30</td><td></td><td></td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>
