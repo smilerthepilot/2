@@ -161,7 +161,7 @@ function renderGrid() {
 }
 
 // --- API helpers ---
-const API_URL = 'REPLACE_WITH_YOUR_BACKEND_URL';
+const API_URL = 'https://two-vtms.onrender.com';
 async function fetchTiles() {
   const res = await fetch(`${API_URL}/tiles`);
   tiles = await res.json();
