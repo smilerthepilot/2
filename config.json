@@ -1,1 +1,20 @@
-{ "message": "ETPS Planner running" }
+{
+    "days": ["Mon", "Tue", "Wed", "Thu", "Fri"],
+    "aircraft": ["XX101", "XX102", "SPARE", "PREFLIGHT", "LUNCH", "XX201"],
+    "startTime": "09:00",
+    "endTime": "17:00",
+    "interval": 15,
+    "tiles": [
+      {
+        "day": "Mon",
+        "aircraft": "XX101",
+        "startTime": "09:00",
+        "duration": 60,
+        "captain": "AB",
+        "students": ["XYZ"],
+        "fuel": "300",
+        "exercise": "CT",
+        "notes": "Initial sortie"
+      }
+    ]
+  }
