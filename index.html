@@ -49,29 +49,32 @@
 
 <div class="grid-container">
   <div class="grid" id="grid">
-    <div class="header">Time</div>
-    <div class="header">XX101</div>
-    <div class="header">XX102</div>
-    <div class="header">SPARE</div>
-    <div class="header">PREFLIGHT</div>
-    <div class="header">LUNCH</div>
-    <div class="header">XX201</div>
-
+    <div class="header">Room/Block</div>
     <script>
+      // Generate time slot headers
+      let times = [];
       for (let h = 9; h <= 17; h++) {
         for (let m = 0; m < 60; m += 15) {
           const time = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
-          document.write('<div class="cell">' + time + '</div>');
-          for (let i = 0; i < 6; i++) {
-            if (time === '09:00' && i === 0) {
-              document.write('<div class="cell"><div class="tile" ondblclick="openPopup()">'
-                + '<div class='captain'>PE</div>HOL'
-                + '<div style="position:absolute;top:2px;right:2px;">300</div>'
-                + '<div style="position:absolute;bottom:2px;right:2px;">CT</div>'
-                + '</div></div>');
-            } else {
-              document.write('<div class="cell"></div>');
-            }
+          times.push(time);
+          document.write('<div class="header">' + time + '</div>');
+        }
+      }
+      // Room/block names
+      const rooms = ["XX101", "XX102", "SPARE", "PREFLIGHT", "LUNCH", "XX201"];
+      // Generate rows: one per room/block
+      for (let r = 0; r < rooms.length; r++) {
+        document.write('<div class="header">' + rooms[r] + '</div>');
+        for (let t = 0; t < times.length; t++) {
+          // Example: Place a tile at XX101, 09:00
+          if (rooms[r] === "XX101" && times[t] === "09:00") {
+            document.write('<div class="cell"><div class="tile" ondblclick="openPopup()">'
+              + '<div class="captain">PE</div>HOL'
+              + '<div style="position:absolute;top:2px;right:2px;">300</div>'
+              + '<div style="position:absolute;bottom:2px;right:2px;">CT</div>'
+              + '</div></div>');
+          } else {
+            document.write('<div class="cell"></div>');
           }
         }
       }
