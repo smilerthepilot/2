@@ -78,6 +78,11 @@
           }
         }
       }
+      // Dynamically set grid-template-columns
+      const grid = document.getElementById('grid');
+      let cols = '80px'; // First column for room/block label
+      for (let i = 0; i < times.length; i++) cols += ' 100px';
+      grid.style.gridTemplateColumns = cols;
     </script>
   </div>
 </div>
