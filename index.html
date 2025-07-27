@@ -62,19 +62,31 @@
       }
       // Room/block names
       const rooms = ["XX101", "XX102", "SPARE", "PREFLIGHT", "LUNCH", "XX201"];
+      // Tile data storage
+      window.tileData = {};
+      // Example: prepopulate one tile
+      tileData["XX101_09:00"] = {
+        takeoff: "09:00",
+        landing: "10:00",
+        captain: "PE",
+        others: "HOL",
+        fuel: "300"
+      };
       // Generate rows: one per room/block
       for (let r = 0; r < rooms.length; r++) {
         document.write('<div class="header">' + rooms[r] + '</div>');
         for (let t = 0; t < times.length; t++) {
-          // Example: Place a tile at XX101, 09:00
-          if (rooms[r] === "XX101" && times[t] === "09:00") {
-            document.write('<div class="cell"><div class="tile" ondblclick="openPopup()">'
-              + '<div class="captain">PE</div>HOL'
-              + '<div style="position:absolute;top:2px;right:2px;">300</div>'
-              + '<div style="position:absolute;bottom:2px;right:2px;">CT</div>'
+          const key = rooms[r] + '_' + times[t];
+          if (tileData[key]) {
+            const tile = tileData[key];
+            document.write('<div class="cell"><div class="tile" ondblclick="openPopup(\'' + key + '\')">'
+              + '<div class="captain">' + tile.captain + '</div>'
+              + tile.others
+              + '<div style="position:absolute;top:2px;right:2px;">' + tile.fuel + '</div>'
+              + '<div style="position:absolute;bottom:2px;right:2px;">' + tile.takeoff + '-' + tile.landing + '</div>'
               + '</div></div>');
           } else {
-            document.write('<div class="cell"></div>');
+            document.write('<div class="cell" ondblclick="openPopup(\'' + key + '\')"></div>');
           }
         }
       }
@@ -90,20 +102,46 @@
 <div class="overlay" id="overlay" onclick="closePopup()"></div>
 <div class="popup" id="popup">
   <h3>Edit Tile</h3>
-  <p>Fuel: <input type="text" value="300" /></p>
-  <p>Exercise: <input type="text" value="CT" /></p>
-  <p>Notes: <textarea rows="4" style="width:100%">Continuation training</textarea></p>
-  <button onclick="closePopup()">Close</button>
+  <form id="popupForm" onsubmit="savePopup(); return false;">
+    <input type="hidden" id="popupKey" />
+    <p>Take Off: <input type="text" id="popupTakeoff" /></p>
+    <p>Landing: <input type="text" id="popupLanding" /></p>
+    <p>Captain: <input type="text" id="popupCaptain" /></p>
+    <p>Other Persons: <input type="text" id="popupOthers" /></p>
+    <p>Fuel State: <input type="text" id="popupFuel" /></p>
+    <button type="submit">Save</button>
+    <button type="button" onclick="closePopup()">Cancel</button>
+  </form>
 </div>
 
 <script>
-function openPopup() {
+function openPopup(key) {
+  const data = window.tileData[key] || { takeoff: '', landing: '', captain: '', others: '', fuel: '' };
+  document.getElementById("popupKey").value = key;
+  document.getElementById("popupTakeoff").value = data.takeoff;
+  document.getElementById("popupLanding").value = data.landing;
+  document.getElementById("popupCaptain").value = data.captain;
+  document.getElementById("popupOthers").value = data.others;
+  document.getElementById("popupFuel").value = data.fuel;
   document.getElementById("popup").style.display = "block";
   document.getElementById("overlay").style.display = "block";
 }
 function closePopup() {
   document.getElementById("popup").style.display = "none";
   document.getElementById("overlay").style.display = "none";
+}
+function savePopup() {
+  const key = document.getElementById("popupKey").value;
+  window.tileData[key] = {
+    takeoff: document.getElementById("popupTakeoff").value,
+    landing: document.getElementById("popupLanding").value,
+    captain: document.getElementById("popupCaptain").value,
+    others: document.getElementById("popupOthers").value,
+    fuel: document.getElementById("popupFuel").value
+  };
+  closePopup();
+  // Re-render grid
+  location.reload();
 }
 </script>
 </body>
