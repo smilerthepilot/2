@@ -61,8 +61,11 @@
     <p>Captain: <input type="text" id="popupCaptain" /></p>
     <p>Other Persons: <input type="text" id="popupOthers" /></p>
     <p>Fuel State: <input type="text" id="popupFuel" /></p>
+    <p>FTI: <input type="text" id="popupFTI" /></p>
+    <p>Notes: <textarea id="popupNotes" rows="2" style="width:100%"></textarea></p>
     <button type="submit">Save</button>
     <button type="button" onclick="closePopup()">Cancel</button>
+    <button type="button" id="deleteBtn" onclick="deletePopup()" style="display:none;background:#c00;color:#fff;float:right;">Delete</button>
   </form>
 </div>
 
@@ -74,18 +77,8 @@ for (let h = 9; h <= 17; h++) {
     times.push(String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'));
   }
 }
-const rooms = ["XX101", "XX102", "SPARE", "PREFLIGHT", "LUNCH", "XX201"];
-window.tileData = window.tileData || {};
-// Example: prepopulate one tile if not present
-if (!tileData["XX101_09:00"]) {
-  tileData["XX101_09:00"] = {
-    takeoff: "09:00",
-    landing: "10:00",
-    captain: "PE",
-    others: "HOL",
-    fuel: "300"
-  };
-}
+const aircrafts = ["XX101", "XX102", "SPARE", "PREFLIGHT", "LUNCH", "XX201"];
+let tiles = [];
 
 function timeToIndex(time) {
   return times.indexOf(time);
@@ -104,102 +97,142 @@ function renderGrid() {
   grid.style.display = 'grid';
   grid.style.gridTemplateColumns = cols;
   // Header row
-  const headerRoom = document.createElement('div');
-  headerRoom.className = 'header';
-  headerRoom.textContent = 'Room/Block';
-  grid.appendChild(headerRoom);
+  const headerAircraft = document.createElement('div');
+  headerAircraft.className = 'header';
+  headerAircraft.textContent = 'Aircraft';
+  grid.appendChild(headerAircraft);
   for (let t = 0; t < times.length; t++) {
     const th = document.createElement('div');
     th.className = 'header';
-    // Only show label for :00 times
-    th.textContent = times[t].endsWith(':00') ? times[t] : '';
+    // Only show label for :00 times, otherwise no annotation at all
+    if (times[t].endsWith(':00')) {
+      th.textContent = times[t];
+    }
     grid.appendChild(th);
   }
   // Rows
-  for (let r = 0; r < rooms.length; r++) {
-    // Room label
-    const roomHeader = document.createElement('div');
-    roomHeader.className = 'header';
-    roomHeader.textContent = rooms[r];
-    grid.appendChild(roomHeader);
-    // Prepare a row of empty cells
-    const rowCells = Array(times.length).fill(null);
-    // Find all tiles for this room
-    const tiles = [];
-    for (const key in tileData) {
-      if (key.startsWith(rooms[r] + '_')) {
-        const tile = tileData[key];
-        const startIdx = timeToIndex(tile.takeoff);
-        const endIdx = timeToIndex(tile.landing);
-        if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-          tiles.push({ start: startIdx, end: endIdx, tile, key });
-        }
-      }
-    }
-    // Sort tiles by start time
-    tiles.sort((a, b) => a.start - b.start);
-    // Place tiles and empty cells
+  for (let r = 0; r < aircrafts.length; r++) {
+    // Aircraft label
+    const aircraftHeader = document.createElement('div');
+    aircraftHeader.className = 'header';
+    aircraftHeader.textContent = aircrafts[r];
+    grid.appendChild(aircraftHeader);
+    // Find all tiles for this aircraft
+    const rowTiles = tiles.filter(tile => tile.aircraft === aircrafts[r]);
+    // Sort by takeoff time
+    rowTiles.sort((a, b) => timeToIndex(a.takeoff) - timeToIndex(b.takeoff));
     let t = 0;
     while (t < times.length) {
       // Check if a tile starts here
-      const tileObj = tiles.find(tile => tile.start === t);
+      const tileObj = rowTiles.find(tile => timeToIndex(tile.takeoff) === t);
       if (tileObj) {
+        const startIdx = timeToIndex(tileObj.takeoff);
+        const endIdx = timeToIndex(tileObj.landing);
         const cell = document.createElement('div');
         cell.className = 'cell';
         cell.style.position = 'relative';
-        cell.style.gridColumn = `span ${tileObj.end - tileObj.start}`;
-        cell.ondblclick = () => openPopup(tileObj.key);
+        cell.style.gridColumn = `span ${endIdx - startIdx}`;
+        cell.ondblclick = () => openPopup(tileObj);
         const tileDiv = document.createElement('div');
         tileDiv.className = 'tile';
         tileDiv.innerHTML =
-          `<div class="captain">${tileObj.tile.captain}</div>${tileObj.tile.others}` +
-          `<div style="position:absolute;top:2px;right:2px;">${tileObj.tile.fuel}</div>` +
-          `<div style="position:absolute;bottom:2px;right:2px;">${tileObj.tile.takeoff}-${tileObj.tile.landing}</div>`;
+          `<div class="captain">${tileObj.captain || ''}</div>${tileObj.others || ''}` +
+          `<div style="position:absolute;top:2px;right:2px;">${tileObj.fuel || ''}</div>` +
+          `<div style="position:absolute;bottom:2px;right:2px;">${tileObj.takeoff || ''}-${tileObj.landing || ''}</div>` +
+          `<div style="position:absolute;bottom:2px;left:2px;font-size:10px;">${tileObj.fti || ''}</div>`;
         cell.appendChild(tileDiv);
         grid.appendChild(cell);
-        t += (tileObj.end - tileObj.start);
+        t += (endIdx - startIdx);
       } else {
         // Empty cell
         const cell = document.createElement('div');
         cell.className = 'cell';
-        cell.ondblclick = () => openPopup(rooms[r] + '_' + times[t]);
+        cell.ondblclick = () => openPopup({ aircraft: aircrafts[r], takeoff: times[t], landing: times[t], captain: '', others: '', fuel: '', fti: '', notes: '' });
         grid.appendChild(cell);
         t++;
       }
     }
   }
+  // Remove addBtns if present
+  const addBtns = document.getElementById('addBtns');
+  if (addBtns && addBtns.parentNode) {
+    addBtns.parentNode.removeChild(addBtns);
+  }
+}
+
+// --- API helpers ---
+const API_URL = 'REPLACE_WITH_YOUR_BACKEND_URL';
+async function fetchTiles() {
+  const res = await fetch(`${API_URL}/tiles`);
+  tiles = await res.json();
+  renderGrid();
+}
+async function saveTile(tile) {
+  if (tile.id) {
+    // Update
+    await fetch(`${API_URL}/tiles/${tile.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tile)
+    });
+  } else {
+    // Create
+    await fetch(`${API_URL}/tiles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tile)
+    });
+  }
+  fetchTiles();
+}
+async function deleteTile(id) {
+  await fetch(`${API_URL}/tiles/${id}`, { method: 'DELETE' });
+  fetchTiles();
 }
 
 // --- Popup logic ---
-function openPopup(key) {
-  const data = window.tileData[key] || { takeoff: '', landing: '', captain: '', others: '', fuel: '' };
-  document.getElementById("popupKey").value = key;
-  document.getElementById("popupTakeoff").value = data.takeoff;
-  document.getElementById("popupLanding").value = data.landing;
-  document.getElementById("popupCaptain").value = data.captain;
-  document.getElementById("popupOthers").value = data.others;
-  document.getElementById("popupFuel").value = data.fuel;
+let currentTile = null;
+function openPopup(tile) {
+  currentTile = tile;
+  document.getElementById("popupKey").value = tile.id || '';
+  document.getElementById("popupTakeoff").value = tile.takeoff || '';
+  document.getElementById("popupLanding").value = tile.landing || '';
+  document.getElementById("popupCaptain").value = tile.captain || '';
+  document.getElementById("popupOthers").value = tile.others || '';
+  document.getElementById("popupFuel").value = tile.fuel || '';
+  document.getElementById("popupFTI").value = tile.fti || '';
+  document.getElementById("popupNotes").value = tile.notes || '';
   document.getElementById("popup").style.display = "block";
   document.getElementById("overlay").style.display = "block";
+  document.getElementById("deleteBtn").style.display = tile.id ? 'inline-block' : 'none';
 }
 function closePopup() {
   document.getElementById("popup").style.display = "none";
   document.getElementById("overlay").style.display = "none";
 }
 function savePopup() {
-  const key = document.getElementById("popupKey").value;
-  window.tileData[key] = {
+  const tile = {
+    id: document.getElementById("popupKey").value || undefined,
+    aircraft: currentTile.aircraft,
     takeoff: document.getElementById("popupTakeoff").value,
     landing: document.getElementById("popupLanding").value,
     captain: document.getElementById("popupCaptain").value,
     others: document.getElementById("popupOthers").value,
-    fuel: document.getElementById("popupFuel").value
+    fuel: document.getElementById("popupFuel").value,
+    fti: document.getElementById("popupFTI").value,
+    notes: document.getElementById("popupNotes").value
   };
+  saveTile(tile);
   closePopup();
-  renderGrid();
 }
-// Initial render
-renderGrid();
+function deletePopup() {
+  if (currentTile && currentTile.id) {
+    deleteTile(currentTile.id);
+    closePopup();
+  }
+}
+// Initial fetch
+fetchTiles();
 </script>
 </body>
 </html>
