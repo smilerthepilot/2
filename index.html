@@ -48,55 +48,7 @@
 </div>
 
 <div class="grid-container">
-  <div class="grid" id="grid">
-    <div class="header">Room/Block</div>
-    <script>
-      // Generate time slot headers
-      let times = [];
-      for (let h = 9; h <= 17; h++) {
-        for (let m = 0; m < 60; m += 15) {
-          const time = String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
-          times.push(time);
-          document.write('<div class="header">' + time + '</div>');
-        }
-      }
-      // Room/block names
-      const rooms = ["XX101", "XX102", "SPARE", "PREFLIGHT", "LUNCH", "XX201"];
-      // Tile data storage
-      window.tileData = {};
-      // Example: prepopulate one tile
-      tileData["XX101_09:00"] = {
-        takeoff: "09:00",
-        landing: "10:00",
-        captain: "PE",
-        others: "HOL",
-        fuel: "300"
-      };
-      // Generate rows: one per room/block
-      for (let r = 0; r < rooms.length; r++) {
-        document.write('<div class="header">' + rooms[r] + '</div>');
-        for (let t = 0; t < times.length; t++) {
-          const key = rooms[r] + '_' + times[t];
-          if (tileData[key]) {
-            const tile = tileData[key];
-            document.write('<div class="cell"><div class="tile" ondblclick="openPopup(\'' + key + '\')">'
-              + '<div class="captain">' + tile.captain + '</div>'
-              + tile.others
-              + '<div style="position:absolute;top:2px;right:2px;">' + tile.fuel + '</div>'
-              + '<div style="position:absolute;bottom:2px;right:2px;">' + tile.takeoff + '-' + tile.landing + '</div>'
-              + '</div></div>');
-          } else {
-            document.write('<div class="cell" ondblclick="openPopup(\'' + key + '\')"></div>');
-          }
-        }
-      }
-      // Dynamically set grid-template-columns
-      const grid = document.getElementById('grid');
-      let cols = '80px'; // First column for room/block label
-      for (let i = 0; i < times.length; i++) cols += ' 100px';
-      grid.style.gridTemplateColumns = cols;
-    </script>
-  </div>
+  <div class="grid" id="grid"></div>
 </div>
 
 <div class="overlay" id="overlay" onclick="closePopup()"></div>
@@ -104,8 +56,8 @@
   <h3>Edit Tile</h3>
   <form id="popupForm" onsubmit="savePopup(); return false;">
     <input type="hidden" id="popupKey" />
-    <p>Take Off: <input type="text" id="popupTakeoff" /></p>
-    <p>Landing: <input type="text" id="popupLanding" /></p>
+    <p>Take Off: <input type="text" id="popupTakeoff" placeholder="09:00" /></p>
+    <p>Landing: <input type="text" id="popupLanding" placeholder="10:00" /></p>
     <p>Captain: <input type="text" id="popupCaptain" /></p>
     <p>Other Persons: <input type="text" id="popupOthers" /></p>
     <p>Fuel State: <input type="text" id="popupFuel" /></p>
@@ -115,6 +67,109 @@
 </div>
 
 <script>
+// --- Data and helpers ---
+const times = [];
+for (let h = 9; h <= 17; h++) {
+  for (let m = 0; m < 60; m += 15) {
+    times.push(String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'));
+  }
+}
+const rooms = ["XX101", "XX102", "SPARE", "PREFLIGHT", "LUNCH", "XX201"];
+window.tileData = window.tileData || {};
+// Example: prepopulate one tile if not present
+if (!tileData["XX101_09:00"]) {
+  tileData["XX101_09:00"] = {
+    takeoff: "09:00",
+    landing: "10:00",
+    captain: "PE",
+    others: "HOL",
+    fuel: "300"
+  };
+}
+
+function timeToIndex(time) {
+  return times.indexOf(time);
+}
+function indexToTime(idx) {
+  return times[idx];
+}
+
+// --- Grid rendering ---
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  // Set grid columns
+  let cols = '80px';
+  for (let i = 0; i < times.length; i++) cols += ' 25px';
+  grid.style.display = 'grid';
+  grid.style.gridTemplateColumns = cols;
+  // Header row
+  const headerRoom = document.createElement('div');
+  headerRoom.className = 'header';
+  headerRoom.textContent = 'Room/Block';
+  grid.appendChild(headerRoom);
+  for (let t = 0; t < times.length; t++) {
+    const th = document.createElement('div');
+    th.className = 'header';
+    th.textContent = times[t];
+    grid.appendChild(th);
+  }
+  // Rows
+  for (let r = 0; r < rooms.length; r++) {
+    // Room label
+    const roomHeader = document.createElement('div');
+    roomHeader.className = 'header';
+    roomHeader.textContent = rooms[r];
+    grid.appendChild(roomHeader);
+    // Prepare a row of empty cells
+    const rowCells = Array(times.length).fill(null);
+    // Find all tiles for this room
+    const tiles = [];
+    for (const key in tileData) {
+      if (key.startsWith(rooms[r] + '_')) {
+        const tile = tileData[key];
+        const startIdx = timeToIndex(tile.takeoff);
+        const endIdx = timeToIndex(tile.landing);
+        if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+          tiles.push({ start: startIdx, end: endIdx, tile, key });
+        }
+      }
+    }
+    // Sort tiles by start time
+    tiles.sort((a, b) => a.start - b.start);
+    // Place tiles and empty cells
+    let t = 0;
+    while (t < times.length) {
+      // Check if a tile starts here
+      const tileObj = tiles.find(tile => tile.start === t);
+      if (tileObj) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.style.position = 'relative';
+        cell.style.gridColumn = `span ${tileObj.end - tileObj.start}`;
+        cell.ondblclick = () => openPopup(tileObj.key);
+        const tileDiv = document.createElement('div');
+        tileDiv.className = 'tile';
+        tileDiv.innerHTML =
+          `<div class="captain">${tileObj.tile.captain}</div>${tileObj.tile.others}` +
+          `<div style="position:absolute;top:2px;right:2px;">${tileObj.tile.fuel}</div>` +
+          `<div style="position:absolute;bottom:2px;right:2px;">${tileObj.tile.takeoff}-${tileObj.tile.landing}</div>`;
+        cell.appendChild(tileDiv);
+        grid.appendChild(cell);
+        t += (tileObj.end - tileObj.start);
+      } else {
+        // Empty cell
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.ondblclick = () => openPopup(rooms[r] + '_' + times[t]);
+        grid.appendChild(cell);
+        t++;
+      }
+    }
+  }
+}
+
+// --- Popup logic ---
 function openPopup(key) {
   const data = window.tileData[key] || { takeoff: '', landing: '', captain: '', others: '', fuel: '' };
   document.getElementById("popupKey").value = key;
@@ -140,9 +195,10 @@ function savePopup() {
     fuel: document.getElementById("popupFuel").value
   };
   closePopup();
-  // Re-render grid
-  location.reload();
+  renderGrid();
 }
+// Initial render
+renderGrid();
 </script>
 </body>
 </html>
